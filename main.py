@@ -1,10 +1,15 @@
 import streamlit as st 
 import pandas as pd
-from back_image import add_bg_from_local
-from db import readAlarm, readData, setDb, esetDb
+# from back_image import add_bg_from_local
+# from db import readAlarm, readData, setDb, esetDb
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 from PIL import Image
+import base64
+import gspread
+
+ga = gspread.service_account(filename='key.json')
+gh = ga.open('Uni_Alarm')
 
 st.set_page_config(page_title="Alarm Manager", page_icon="👓")
 hide_menu = """ 
@@ -70,7 +75,52 @@ def done():
     st.markdown("""
                 <meta http-equiv="refresh" content="0; url='https://www.google.com'" />
                 """, unsafe_allow_html=True
-            )            
+            )  
+              
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
+        background-size: cover
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+    )
+
+def readAlarm():
+    wks = gh.worksheet('AlarmSt')
+    event = []
+    res = wks.get_all_values()
+    for row in res[1:]:
+        event.append(row)    
+    return event
+
+def readData():
+    wks = gh.worksheet('ComSt')
+    data = []
+    res = wks.get_all_values()
+    for row in res[1:]:
+        data.append(row)    
+    return data
+
+def setDb():
+    wks = gh.worksheet('ListSt')
+    req = wks.get_all_values()
+    for s_row in req[1:]:
+        if s_row[3] == '_On':
+            wks.update_acell('F'+ str(s_row[2]), 'Off')
+
+def esetDb(pos):
+    print(pos)
+    wks = gh.worksheet('ListSt')
+    wks.update_acell('F'+ pos, 'Set')
+
+
 
 if __name__ == "__main__":
     main() 
