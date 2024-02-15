@@ -1,7 +1,6 @@
 streamlit
 pandas
 gspread
-db
 streamlit_autorefresh
-streamlit_option_menu
-back_image
+
+
