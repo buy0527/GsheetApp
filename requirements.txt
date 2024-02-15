@@ -2,5 +2,5 @@ streamlit
 pandas
 gspread
 streamlit_autorefresh
-
+streamlit_option_menu
 
