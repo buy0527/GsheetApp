@@ -1,7 +1,5 @@
 import streamlit as st 
 import pandas as pd
-# from back_image import add_bg_from_local
-# from db import readAlarm, readData, setDb, esetDb
 from streamlit_autorefresh import st_autorefresh
 from streamlit_option_menu import option_menu
 from PIL import Image
@@ -39,10 +37,12 @@ def main():
             orientation="horizontal"
             )
         if select == "알람":
-            st_autorefresh(interval=10000, key="reload_count")
+            count = st_autorefresh(interval=10000, limit=50, key="reload_count")
+            if count == 49:
+                st.write("자동업데이트종료, 다시 로그인하세요!")
             es = readAlarm()
-            ef = pd.DataFrame(es, columns=['위치명','알람내용', '위치도면', '알람상태', '알람확인', '리셋', '통신(분)'])
-            st.dataframe(ef, width=700, hide_index=True, column_order=('위치명', '알람내용', '리셋'))
+            ef = pd.DataFrame(es, columns=['위치명','알람내용', '위치도면', '알람상태', '알람정지', '리셋', '통신(분)'])
+            st.dataframe(ef, width=700, hide_index=True, column_order=('위치명', '알람내용', '알람정지'))
             for e in es:
                 if e[2] == '':
                     image = Image.open('./images/logo.png')
@@ -50,17 +50,19 @@ def main():
                 else:
                     image = Image.open('./images/' + e[2] + '.jpg')
                     st.image(image)
-                    if st.button(e[0] + '__알람리셋', use_container_width=True):
+                    if st.button(e[0] + '__알람홀드', use_container_width=True):
+                        hsetDb(e[2])
+                    elif st.button(e[0] + '__알람리셋', use_container_width=True):
                         esetDb(e[2])
-                        st.rerun()
                     elif st.button("전체확인", use_container_width=True):
                         setDb()
-                        st.rerun()
 
         elif select == "전체":
             ts = readData()
-            tf = pd.DataFrame(ts, columns=['위치명','알람내용', '위치도면', '통신상태', '통신(분)', '시스템(분)', '현재시간'])
+            tf = pd.DataFrame(ts, columns=['위치명','알람내용', '위치도면', '통신상태', '통신(분)', '시스템(분)', '현재시간', '변환(분)'])
             st.dataframe(tf, width=700, hide_index=True, column_order=('위치명', '알람내용', '통신상태'))
+            if st.button('Update'):
+                st.toast('Update 완료!')
             for t in ts:
                 image = Image.open('./images/' + t[2] + '.jpg')
                 st.image(image)
@@ -115,12 +117,13 @@ def setDb():
         if s_row[3] == '_On':
             wks.update_acell('F'+ str(s_row[2]), 'Off')
 
-def esetDb(pos):
-    print(pos)
+def hsetDb(pos):
     wks = gh.worksheet('ListSt')
-    wks.update_acell('F'+ pos, 'Set')
+    wks.update_acell('E'+ pos, 'Set')
 
-
+def esetDb(pos):
+    wks = gh.worksheet('ListSt')
+    wks.update_acell('F'+ pos, 'Set')    
 
 if __name__ == "__main__":
     main() 
